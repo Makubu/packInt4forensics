@@ -13,7 +13,6 @@ else:
         sys.exit(2)
 
     for opt, arg in opts:
-        print(opt, arg)
         if opt in ("-h", "--help"):
             good_usage.good_usage()
             sys.exit()

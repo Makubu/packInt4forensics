@@ -1,16 +1,16 @@
 import get_package_info
+import numpy as np
 
 
 def find_check_package(package=None):
     package_info = get_package_info.get_package_info(package=package)
-    package_number = len(package_info[:, 1])
-    if package_number == 0:
-        print("\nPlease provide the name of an installed package \n")
-    elif package_number == 1:
-        # TODO , package identifié, lancer la vérification du hash
+
+    if package_info is None:
+        print("\nThere is no package matching the search for \""+package+"\" \n")
+        return 0
+    elif len(package_info[:, 1]) == 1:  # number of package found
         package_version = package_info[0][2]
-        print("TODO, package version is " + package_version)
-        exit(0)
+        check_package(package=package, version=package_version)
     else:
 
         is_in_package_list = package in package_info[:, 1]
@@ -18,7 +18,7 @@ def find_check_package(package=None):
             print("\nMore than one package were found for " + package + " " + "package, please write the full name "
                                                                               "of the package within the following "
                   + str(len(package_info[:,
-                            1])) + " packages:\n\n ")
+                            1])) + " packages:\n ")
         else:
             print("\nMore than one package were found for " + package + " " + "package, please confirm the full name "
                                                                               "of the package within the following "
@@ -37,11 +37,14 @@ def find_check_package(package=None):
                 str_to_print = str_to_print + package_name
                 print(str_to_print)
         print("")
+        print(">> ", end='')
         new_package = input()
         if is_in_package_list:
             if new_package == package:
                 # TODO:trouver version dans la liste des différents paquets
-                check_package(package=new_package, version=None)
+                index = np.where(package_info[:, 1] == package)[0][0]
+                package_version = package_info[index][2]
+                check_package(package=new_package, version=package_version)
             else:
                 find_check_package(package=new_package)
         else:
@@ -50,4 +53,5 @@ def find_check_package(package=None):
 
 def check_package(package=None, version=None):
     # TODO
+    print("\nthe check for packet " + package + " at version " + str(version) + " has started")
     return 0
