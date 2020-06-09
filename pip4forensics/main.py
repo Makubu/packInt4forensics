@@ -23,5 +23,5 @@ else:
             get_package_info.search_package(package=arg)
             sys.exit()
         elif opt in ("-c", "--check"):
-            check_package.find_check_package(package=arg)
+            check_package.check_package(package=arg)
             sys.exit()

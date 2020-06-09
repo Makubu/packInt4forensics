@@ -1,16 +1,20 @@
 import get_package_info
 import numpy as np
+import subprocess
+import re
 
 
 def find_check_package(package=None):
+    found_package = None
     package_info = get_package_info.get_package_info(package=package)
 
     if package_info is None:
         print("\nThere is no package matching the search for \"" + package + "\" \n")
-        return 0
+        return None
     elif len(package_info[:, 0]) == 1:  # number of package found
         package_version = package_info[0][1]
-        check_package(package=package, version=package_version)
+        found_package = (package, package_version)
+        return found_package
     else:
         is_in_package_list = package in package_info[:, 0]
         print(is_in_package_list)
@@ -40,17 +44,30 @@ def find_check_package(package=None):
         new_package = input()
         if is_in_package_list:
             if new_package == package:
-                # TODO:trouver version dans la liste des différents paquets
                 index = np.where(package_info[:, 0] == package)[0][0]
                 package_version = package_info[index][1]
-                check_package(package=new_package, version=package_version)
+                found_package = (package, package_version)
+                return found_package
             else:
-                find_check_package(package=new_package)
+                found_package = find_check_package(package=new_package)
+                return found_package
         else:
-            find_check_package(package=new_package)
+            found_package = find_check_package(package=new_package)
+            return found_package
 
 
-def check_package(package=None, version=None):
-    # TODO
-    print("\nthe check for packet " + package + " at version " + str(version) + " has started")
+def check_package(package=None):
+    package_info = find_check_package(package)
+    if package_info is None:
+        return 0
+    package_name, package_version = package_info[0], package_info[1]
+
+    cmd = "pip show " + package_name + " | egrep \"^Location\""
+    byte_out = subprocess.check_output(cmd, shell=True)
+    string_out = byte_out.decode("utf-8")
+    package_location = re.sub(r"\s", "", string_out.split(" ")[1])
+
+    print("\nThe check for packet " + package_version + " at version " + str(
+        package_version) + " located in " + package_location + " has started")
+
     return 0
