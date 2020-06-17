@@ -3,9 +3,6 @@ import shutil
 import zipfile
 import hashlib
 
-example_package_name = "numpy-1.18.4-cp35-cp35m-manylinux1_x86_64.whl"
-virtual_env_path_example = "/home/gael/.local/lib/python2.7/site-packages"
-
 
 # Goal: Compute the sha256 of a file
 # Argument: Path to the file
@@ -22,10 +19,11 @@ def sha_256_computation(file_to_hash):  # file_to_hash is a path
 
 
 # Goal: Extract a whl package in a subdirectory of the current directory
-# Arguments: Name of the whl package (Not the full path -> We know where the legit packages are downloaded already)
+# Arguments: Name of the whl package, directory in which we will create folder and unzip files, and directory where
+# the legitimate whl packages were previously downloaded
 # Return: the directory where the whl package has been extracted
-def extract_package_current_directory(package_name):
-    working_directory = os.getcwd()
+def extract_package_current_directory(package_name, working_directory, download_directory):
+    os.chdir(working_directory)
     extraction_folder_name = "/Pip_package_extraction_folder"
     print("You are working in the directory: " + working_directory + "\n")
     try:
@@ -33,7 +31,7 @@ def extract_package_current_directory(package_name):
     except OSError:
         print("Could not create extraction folder\n")
     # Copy pip whl file from Download folder (deb_src) to here for manipulations
-    deb_src = working_directory + "/../../Package_PIP_Example/" + package_name
+    deb_src = download_directory + package_name
     dst_folder = working_directory + extraction_folder_name
     try:
         shutil.copy(deb_src, dst_folder)  # Handle exceptions (eg. no more space)
@@ -113,7 +111,7 @@ def compute_hashes_package_installed(virtual_env_path, package_name, extracted_h
 
 # Goal: Delete the temporary directories created -> to clean some space
 # Arguments: Directory in which we created the extraction folder in the first place
-# Returns: Nothing,
+# Returns: Nothing, it's just deleting files
 def delete_temp_extraction_directory(working_directory):
     os.chdir(working_directory)
     extraction_folder_name = "/Pip_package_extraction_folder"
@@ -122,3 +120,17 @@ def delete_temp_extraction_directory(working_directory):
     except IOError:
         print("Could not clean the directory\n")
     print("Temporary package extraction folder successfully deleted\n")
+
+
+# Example of use: ( WARNING: Do not change working directory between different functions !)
+example_package_name = "numpy-1.18.4-cp35-cp35m-manylinux1_x86_64.whl"
+virtual_env_path_example = "/home/gael/.local/lib/python2.7/site-packages"
+working_dir=os.getcwd()
+download_dir=working_dir+"/../../Package_PIP_Example/"
+
+extract_package_current_directory(example_package_name, working_dir, download_dir)
+name_file_containing_hashes = compute_hashes_legit_package(example_package_name)
+compute_hashes_package_installed(virtual_env_path_example, example_package_name, name_file_containing_hashes)
+delete_temp_extraction_directory(working_dir)
+
+
