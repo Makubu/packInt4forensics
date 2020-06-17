@@ -25,19 +25,19 @@ def sha_256_computation(file_to_hash):  # file_to_hash is a path
 def extract_package_current_directory(package_name, working_directory, download_directory):
     os.chdir(working_directory)
     extraction_folder_name = "/Pip_package_extraction_folder"
-    print("You are working in the directory: " + working_directory + "\n")
+    print("You are working in the directory: " + working_directory)
     try:
         os.mkdir(working_directory + extraction_folder_name)
     except OSError:
-        print("Could not create extraction folder\n")
+        print("Could not create extraction folder")
     # Copy pip whl file from Download folder (deb_src) to here for manipulations
     deb_src = download_directory + package_name
     dst_folder = working_directory + extraction_folder_name
     try:
         shutil.copy(deb_src, dst_folder)  # Handle exceptions (eg. no more space)
     except IOError:
-        print("Could not copy the package. Package downloaded is not in the right folder\n")
-    print("Whl package successfully copied\n")
+        print("Could not copy the package. Package downloaded is not in the right folder")
+    print("Whl package successfully copied")
     os.chdir(working_directory + extraction_folder_name)
     new_name_for_unzipping = package_name.replace(".whl", ".zip")
     os.rename(package_name, new_name_for_unzipping)
@@ -46,7 +46,7 @@ def extract_package_current_directory(package_name, working_directory, download_
         try:
             Whl_Pckg_zip.extractall()
         except Exception as e:
-            print("Errors when unzipping the whl package" + e + "\n")
+            print("Errors when unzipping the whl package" + e)
     return os.getcwd()
 
 
@@ -60,9 +60,9 @@ def compute_hashes_legit_package(package_name):
     working_directory=os.getcwd()
     hash_file_name="hash_file.txt"
     hash_file = open(hash_file_name, "w")  # Create the file
-    hash_file.write("Beginning of Hash File:\n")
+    hash_file.write("Beginning of Hash File:")
     hash_file.close()
-    print("File containing the hashes successfully initialized\n")
+    print("File containing the hashes successfully initialized")
     hash_file = open(hash_file_name, "a")  # Each time append to the file
     # r=root, d=directories, f=files
     for r, d, f in os.walk(working_directory + extraction_folder_name + extracted_interesting_folder):
@@ -76,18 +76,21 @@ def compute_hashes_legit_package(package_name):
             hash_file.write(hash_of_file + "\n")  # The next line = hash value of the file
             # Then we will just search for a file and take the next line to get its hash value
     hash_file.close()
-    print("End of Extraction legitimate files \n")
+    print("End of Extraction legitimate files")
     return hash_file_name
 
 
 # Goal: Compute the hashes of the installed packages to compare them with the legitimate ones
 # Arguments: The VE path where the packages are installed, the package name, the name of the file which contains the
 # hashes of the legitimate packages
-# Returns: List of modified files, and List of non existing files in legitimate package
+# Returns: List of legitimate file, modified files, and non existing files compared to the legitimate package files
 def compute_hashes_package_installed(virtual_env_path, package_name, extracted_hash_values_file):
     # # Need to have a relation to obtain ve_interesting_folder out of package_name
     ve_interesting_folder = "/numpy"  # Also will have to use some Regex to have the right name
     file_to_list = []
+    legitimate_files = []
+    corrupted_files = []
+    unknown_files = []
     with open(extracted_hash_values_file, 'rt') as my_hash_file:
         for line in my_hash_file:
             file_to_list.append(line.rstrip('\n'))
@@ -101,12 +104,13 @@ def compute_hashes_package_installed(virtual_env_path, package_name, extracted_h
                 index_file_in_hash_file_list = file_to_list.index(file)
                 hash_legit_file = file_to_list[index_file_in_hash_file_list + 1]
                 if hash_of_file == hash_legit_file:
-                    print("File: " + file + " is legitimate\n")
+                    legitimate_files.append(file)
                 else:
-                    print("File: " + file + " was corrupted\n")
+                    corrupted_files.append(file)
             except ValueError:  # In case file is not in the list of legitimate files
-                print("File: " + file + " is not in the original legitimate package.\n")
+                unknown_files.append(file)
     print("End of Checking\n")
+    return legitimate_files, corrupted_files, unknown_files
 
 
 # Goal: Delete the temporary directories created -> to clean some space
@@ -130,7 +134,16 @@ download_dir=working_dir+"/../../Package_PIP_Example/"
 
 extract_package_current_directory(example_package_name, working_dir, download_dir)
 name_file_containing_hashes = compute_hashes_legit_package(example_package_name)
-compute_hashes_package_installed(virtual_env_path_example, example_package_name, name_file_containing_hashes)
+list_legit_files, list_corrupt_files, list_unknown_file = compute_hashes_package_installed(virtual_env_path_example, example_package_name, name_file_containing_hashes)
+print("Legitimate files:")
+print(list_legit_files)
+print("\n")
+print("Corrupted files:")
+print(list_corrupt_files)
+print("\n")
+print("Unknown files:")
+print(list_unknown_file)
+print("\n")
 delete_temp_extraction_directory(working_dir)
 
 
