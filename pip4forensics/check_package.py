@@ -1,9 +1,11 @@
-import get_package_info
-import numpy as np
-import subprocess
-import re
 import os
+import re
 import shutil
+import subprocess
+import get_package_info
+import Retrieve_Hash_Custom_PIP_Package
+import numpy as np
+from colorama import Fore, Style, Back, init
 
 
 def find_check_package(package=None):
@@ -19,7 +21,7 @@ def find_check_package(package=None):
         return found_package
     else:
         is_in_package_list = package in package_info[:, 0]
-        print(is_in_package_list)
+
         if not is_in_package_list:
             print("\nMore than one package were found for " + package + " " + "package, please write the full name "
                                                                               "of the package within the following "
@@ -58,9 +60,10 @@ def find_check_package(package=None):
             return found_package
 
 
-def download_pip_package(package_name, package_version=None, download_dir='download_dir', already_downloaded_package=None):
+def download_pip_package(package_name, package_version=None, download_dir='download_dir',
+                         already_downloaded_package=None):
     if already_downloaded_package is not None:
-        return already_downloaded_package
+        return os.getcwd() + "/" + already_downloaded_package
 
     try:
         os.makedirs(download_dir)
@@ -84,10 +87,11 @@ def download_pip_package(package_name, package_version=None, download_dir='downl
     except Exception:
         print("A problem occurred while downloading the package " + package_name + " in version " + package_version)
         return None
-    return download_dir + "/" + os.listdir(download_dir)[0]
+    return os.getcwd() + "/" + download_dir + "/" + os.listdir(download_dir)[0]
 
 
-def check_package(package=None, download_dir='download_dir', already_downloaded_package=None):
+def check_package(package=None, download_dir='download_dir', already_downloaded_package=None, debug=False, keep=False,
+                  diff=False, listing=False):
     package_info = find_check_package(package)
     if package_info is None:
         return 0
@@ -99,10 +103,56 @@ def check_package(package=None, download_dir='download_dir', already_downloaded_
     package_location = re.sub(r"\s", "", string_out.split(" ")[1])
 
     print("\nThe check for packet " + package_version + " at version " + str(
-        package_version) + " located in " + package_location + " has started")
+        package_version) + " has started\n")
 
     legitimate_package = download_pip_package(package_name, package_version, download_dir, already_downloaded_package)
 
-    print(legitimate_package)
+    if debug:
+        print("Legitimate package downloaded at " + legitimate_package)
+
+    extraction_directory = Retrieve_Hash_Custom_PIP_Package.extract_package_current_directory(package_name,
+                                                                                              legitimate_package,
+                                                                                              debug=debug)
+
+    hash_file_name = Retrieve_Hash_Custom_PIP_Package.compute_hashes_legit_package(extraction_directory)
+
+    legit_files, corrupted_files, unknown_file, path_to_corrupted_files = Retrieve_Hash_Custom_PIP_Package.compute_hashes_package_installed(
+        package_location, package_name, hash_file_name, extraction_directory, debug=debug)
+
+    if diff:
+        Retrieve_Hash_Custom_PIP_Package.compute_differences(package_location, package_name, corrupted_files,
+                                                             path_to_corrupted_files, debug=debug)
+
+    if not keep:
+        Retrieve_Hash_Custom_PIP_Package.delete_temp_extraction_directory(debug=debug)
+
+    if debug or listing:
+        print(Fore.GREEN)
+        print("Legitimate files:")
+        if len(legit_files) == 0:
+            print('None')
+        else:
+            print(*legit_files, sep = ", ")
+
+        print(Fore.RED)
+        print("Corrupted files:")
+        if len(corrupted_files) == 0:
+            print('None')
+        else:
+            print(*corrupted_files, sep = ", ")
+
+        print(Fore.YELLOW)
+        print("Unknown files:")
+        if len(unknown_file) == 0:
+            print('None')
+        else:
+            print(*unknown_file, sep = ", ")
+
+    init(autoreset=True)
+    if len(corrupted_files) > 0:
+        print(Fore.RED + Back.LIGHTWHITE_EX + "\nRESULTS: Some corrupted files were found :")
+        print(corrupted_files)
+    else:
+        print(Fore.GREEN + Style.BRIGHT +Back.LIGHTBLACK_EX + "\nRESULTS: No corrupted file has been found" + Style.RESET_ALL + "\n")
 
     return 0
