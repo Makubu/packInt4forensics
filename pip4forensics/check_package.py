@@ -128,30 +128,32 @@ def check_package(package=None, download_dir='download_dir', already_downloaded_
 
     if debug or listing:
         print(Fore.GREEN)
-        print("Legitimate files:")
+        print("Legitimate files:"+Style.RESET_ALL)
         if len(legit_files) == 0:
             print('None')
         else:
             print(*legit_files, sep = ", ")
 
         print(Fore.RED)
-        print("Corrupted files:")
+        print("Corrupted files:"+Style.RESET_ALL)
         if len(corrupted_files) == 0:
             print('None')
         else:
             print(*corrupted_files, sep = ", ")
 
         print(Fore.YELLOW)
-        print("Unknown files:")
+        print("Unknown files:"+Style.RESET_ALL)
         if len(unknown_file) == 0:
             print('None')
         else:
             print(*unknown_file, sep = ", ")
 
+    print("")
     init(autoreset=True)
     if len(corrupted_files) > 0:
-        print(Fore.RED + Back.LIGHTWHITE_EX + "\nRESULTS: Some corrupted files were found :")
-        print(corrupted_files)
+        print(Fore.RED + Style.BRIGHT + Back.LIGHTBLACK_EX + "\nRESULTS: Some corrupted files were found:")
+        print(*corrupted_files, sep=',')
+        print(Style.RESET_ALL)
     else:
         print(Fore.GREEN + Style.BRIGHT +Back.LIGHTBLACK_EX + "\nRESULTS: No corrupted file has been found" + Style.RESET_ALL + "\n")
 
