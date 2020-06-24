@@ -87,6 +87,7 @@ def download_pip_package(package_name, package_version=None, download_dir='downl
     except Exception:
         print("A problem occurred while downloading the package " + package_name + " in version " + package_version)
         return None
+    print("")
     return os.getcwd() + "/" + download_dir + "/" + os.listdir(download_dir)[0]
 
 
@@ -102,10 +103,15 @@ def check_package(package=None, download_dir='download_dir', already_downloaded_
     string_out = byte_out.decode("utf-8")
     package_location = re.sub(r"\s", "", string_out.split(" ")[1])
 
-    print("\nThe check for packet " + package_version + " at version " + str(
+    print("\nThe check for package " + package_name + " at version " + str(
         package_version) + " has started\n")
 
     legitimate_package = download_pip_package(package_name, package_version, download_dir, already_downloaded_package)
+
+    if already_downloaded_package is not None:
+        print("Checking with the folowing legitimate package: ")
+        print(already_downloaded_package)
+        print("")
 
     if debug:
         print("Legitimate package downloaded at " + legitimate_package)
@@ -114,21 +120,20 @@ def check_package(package=None, download_dir='download_dir', already_downloaded_
                                                                                               legitimate_package,
                                                                                               debug=debug)
 
-    hash_file_name = Retrieve_Hash_Custom_PIP_Package.compute_hashes_legit_package(extraction_directory)
+    hash_file_name, extracted_folder_name = Retrieve_Hash_Custom_PIP_Package.compute_hashes_legit_package(extraction_directory)
 
     legit_files, corrupted_files, unknown_file, path_to_corrupted_files = Retrieve_Hash_Custom_PIP_Package.compute_hashes_package_installed(
         package_location, package_name, hash_file_name, extraction_directory, debug=debug)
 
     if diff:
-        Retrieve_Hash_Custom_PIP_Package.compute_differences(package_location, package_name, corrupted_files,
-                                                             path_to_corrupted_files, debug=debug)
+        Retrieve_Hash_Custom_PIP_Package.compute_differences(package_name, extraction_directory, corrupted_files,
+                                                             path_to_corrupted_files, extracted_folder_name, debug=debug)
 
     if not keep:
         Retrieve_Hash_Custom_PIP_Package.delete_temp_extraction_directory(debug=debug)
 
     if debug or listing:
-        print(Fore.GREEN)
-        print("Legitimate files:"+Style.RESET_ALL)
+        print(Fore.GREEN + "Legitimate files:"+Style.RESET_ALL)
         if len(legit_files) == 0:
             print('None')
         else:
@@ -147,14 +152,14 @@ def check_package(package=None, download_dir='download_dir', already_downloaded_
             print('None')
         else:
             print(*unknown_file, sep = ", ")
+        print("")
 
-    print("")
     init(autoreset=True)
     if len(corrupted_files) > 0:
-        print(Fore.RED + Style.BRIGHT + Back.LIGHTBLACK_EX + "\nRESULTS: Some corrupted files were found:")
+        print(Fore.RED + Style.BRIGHT + Back.LIGHTBLACK_EX + "RESULTS: Some corrupted files were found:")
         print(*corrupted_files, sep=',')
         print(Style.RESET_ALL)
     else:
-        print(Fore.GREEN + Style.BRIGHT +Back.LIGHTBLACK_EX + "\nRESULTS: No corrupted file has been found" + Style.RESET_ALL + "\n")
+        print(Fore.GREEN + Style.BRIGHT +Back.LIGHTBLACK_EX + "RESULTS: No corrupted file has been found" + Style.RESET_ALL + "\n")
 
     return 0

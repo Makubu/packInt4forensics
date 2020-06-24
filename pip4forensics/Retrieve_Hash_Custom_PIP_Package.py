@@ -79,6 +79,7 @@ def compute_hashes_legit_package(extraction_directory, debug = False):
     hash_file = open(hash_file_name, "w")
     hash_file.write("Beginning of Hash File:")
     hash_file.close()
+    extracted_folder_name = None
     if debug:
         print("File containing the hashes successfully initialized")
     hash_file = open(hash_file_name, "a")
@@ -86,6 +87,9 @@ def compute_hashes_legit_package(extraction_directory, debug = False):
     for r, d, f in os.walk('./'):
         for file in f:
             path_of_file = os.path.join(r, file)
+            if len(path_of_file.replace(extraction_directory,"").split('/')) > 2:
+                extracted_folder_name = path_of_file.replace(extraction_directory, "").split('/')[1]
+
             # Compute hash of file + store it hash_file
             hash_of_file = sha_256_computation(path_of_file)
             # Write the file name and the hash in the hash_file
@@ -95,7 +99,7 @@ def compute_hashes_legit_package(extraction_directory, debug = False):
     if debug:
         print("End of Extraction legitimate files")
     os.chdir(ordir)
-    return hash_file_name
+    return hash_file_name, extracted_folder_name
 
 
 # Goal: Compute the hashes of the installed packages to compare them with the legitimate ones
@@ -163,10 +167,13 @@ def lists_content_print(leg_list, corr_list, unk_list):
     print("Unknown files:")
     print(unk_list)
 
-def compute_differences(virtual_environment, package_name, corr_list, corr_list_path, debug=False):
+def compute_differences(package_name, package_path, corr_list, corr_list_path, extracted_folder_name, debug=False):
     ordir = os.getcwd()
-    package_name_stripped = package_name.replace("/", "_")
-    difference_folder_name = "Diff_of_corrupted_packages_" + package_name_stripped
+    if extracted_folder_name is None:
+        print("Can't compute the diff")
+        return 1
+    package_name_stripped = package_path.replace("/", "_")
+    difference_folder_name = "Diff_of_corrupted_packages_" + package_name
     files_not_differenced=[]
 
 
@@ -192,7 +199,8 @@ def compute_differences(virtual_environment, package_name, corr_list, corr_list_
         file_containing_differences.write("Beginning of Diff File:\n")
         file_containing_differences.close()
         Corrupted_file = corr_list_path[file_name_position]
-        Legitimate_file = Corrupted_file.replace(virtual_environment, "/Pip_package_extraction_folder")
+        Legitimate_file = package_path + '/' + extracted_folder_name + '/' + package_name + '/' +Corrupted_file.split('/')[-1]
+
         file_containing_differences = open(corr_list[file_name_position], "a")
         try:
             with open(Legitimate_file) as Legit_file:
@@ -207,6 +215,8 @@ def compute_differences(virtual_environment, package_name, corr_list, corr_list_
     if debug:
         print("Creation of the different Diff Files was successful \n")
 
+    os.chdir(ordir)
+    return 0
 
 # Example of use:
 # Need only a starting defined working_dir. Then no need to specify anymore
