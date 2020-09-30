@@ -5,5 +5,3 @@ A more comprehensive description can be found with the option -h of --help
 We created some options, the option -l or --list is recommended to be used
 To launch a verification of a package you can do as follows:   $python ./main.py -c package_name
 
-
--- Maxence BRUGERES and Gael AUDINET --
